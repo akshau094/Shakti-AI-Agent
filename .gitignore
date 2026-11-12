@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+data/
+runtime/
+dist/
+build/
+*.spec
+*.log
+vendor/
+*.msi
+.env
+.env.*
+!.env.example
+*.pem
+*.key
