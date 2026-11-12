@@ -4,9 +4,9 @@
 
 **A local AI workspace for code, documents, and persistent memory.**
 
-Python 3.10+ · Local inference · Backend milestone · Desktop in development
+Python 3.10+ Â· Local inference Â· Backend milestone Â· Desktop in development
 
-[Get started](#get-started) · [Capabilities](#published-capabilities) · [Architecture](#how-it-works) · [Roadmap](#roadmap)
+[Get started](#get-started) Â· [Capabilities](#published-capabilities) Â· [Architecture](#how-it-works) Â· [Roadmap](#roadmap)
 
 </div>
 
@@ -26,7 +26,7 @@ explicit memories, and indexed documents locally.
 
 | Area | Available in this milestone |
 | --- | --- |
-| Local AI connection | Chat and streamed responses through a loopback-only Ollama endpoint |
+| Local AI connection | Chat and streamed responses through a loopback-only local AI endpoint |
 | Persistent memory | SQLite storage for conversations, explicit notes, and document chunks, separated by scope |
 | Document extraction | Text-based PDF, DOCX, XLSX, UTF-8 text, CSV, and supported source files |
 | Document retrieval | Chunking, embedding-based search, and source references in model context |
@@ -43,7 +43,7 @@ this public milestone.
 
 - Python **3.10 or later**; development currently targets Windows.
 - Git to clone the repository.
-- A local Ollama installation and downloaded weights **only for live AI use**.
+- A compatible local AI runtime and downloaded weights **only for live AI use**.
 
 ### Install and test
 
@@ -63,17 +63,17 @@ and the agent loop without downloading weights or calling an AI service.
 
 ### Connect a local model
 
-Install [Ollama](https://ollama.com/download), start its local server, and download
-the models currently expected by the backend:
+Live AI use requires a compatible local runtime listening at
+`http://127.0.0.1:11434`, plus downloaded coding and document-embedding weights.
+The backend currently expects `qwen2.5-coder:1.5b` for answers and
+`nomic-embed-text` for document embeddings.
 
-```powershell
-ollama pull qwen2.5-coder:1.5b
-ollama pull nomic-embed-text
-```
+Runtime setup and download commands are not included in this backend milestone.
+The planned desktop setup flow will handle those steps. The tests above can be
+run independently of a live AI installation.
 
-The first model generates answers; the second creates document embeddings.
-Downloads require internet access. The backend sends inference requests to
-`http://127.0.0.1:11434` and bypasses system HTTP proxies.
+Initial downloads require internet access. Once configured, inference requests
+use the local endpoint and bypass system HTTP proxies.
 
 Check the connection from the repository root:
 
@@ -93,7 +93,7 @@ Question or coding task
 Conversation history + explicit memories + retrieved passages
         |
         v
-Local model running through Ollama
+Local model running on your computer
         |
         +-- Answer with reference context
         |
