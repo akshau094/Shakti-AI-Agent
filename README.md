@@ -4,9 +4,9 @@
 
 **A local AI workspace for code, documents, and persistent memory.**
 
-Python 3.10+ Â· Local inference Â· Backend milestone Â· Desktop in development
+Python 3.10+ Ã‚Â· Local inference Ã‚Â· Backend milestone Ã‚Â· Desktop in development
 
-[Get started](#get-started) Â· [Capabilities](#published-capabilities) Â· [Architecture](#how-it-works) Â· [Roadmap](#roadmap)
+[Get started](#get-started) Ã‚Â· [Capabilities](#published-capabilities) Ã‚Â· [Architecture](#how-it-works) Ã‚Â· [Roadmap](#roadmap)
 
 </div>
 
@@ -86,40 +86,90 @@ and response speed depend on the selected weights, task, and available hardware.
 
 ## How it works
 
-```text
-Question or coding task
-        |
-        v
-Conversation history + explicit memories + retrieved passages
-        |
-        v
-Local model running on your computer
-        |
-        +-- Answer with reference context
-        |
-        +-- Read project files -> propose a diff -> review -> apply with backup
+Shakti combines your request with relevant local context, asks a model running
+on your computer, and returns an answer or a file-change proposal.
+
+```mermaid
+flowchart TD
+    Request[Your question or coding task] --> Context[Build task context]
+    History[Conversation history] --> Context
+    Memory[Saved workspace instructions] --> Context
+    Documents[Imported documents] --> Extract[Extract and split text]
+    Extract --> Index[Store passages and embeddings]
+    Index --> Retrieve[Retrieve relevant passages]
+    Retrieve --> Context
+    Context --> Model[Local AI model]
+    Model --> Answer[Answer with reference context]
+    Model --> Inspect[Read relevant project files]
+    Inspect --> Proposal[Prepare a change proposal and diff]
+    Proposal --> Review{Approve the proposal?}
+    Review -->|No| Keep[Keep existing files]
+    Review -->|Yes| Check{File still matches the original?}
+    Check -->|No| Regenerate[Request a fresh proposal]
+    Check -->|Yes| Backup[Back up the existing file]
+    Backup --> Save[Write the approved change]
 ```
 
-Document ingestion extracts text, divides it into passages, and stores their
-embeddings. Retrieval supplies relevant passages when answering a question.
-Memory and retrieval provide context; saving information does not retrain model
-weights. The coding agent cannot execute shell commands or automatically apply
-its proposals.
+### Questions and document context
+
+1. **Import:** readable text is extracted from supported documents and split into passages.
+2. **Index:** passages, source references, and embeddings are stored in the local database. Content hashes avoid reindexing unchanged documents.
+3. **Retrieve:** relevant passages are selected for a question using embedding similarity.
+4. **Answer:** retrieved context, saved instructions, and recent conversation history are supplied to the local model.
+
+Documents and explicit memories are separated by workspace scope. They provide
+reference context; importing a document or saving a conversation does not train
+the model's weights.
+
+### Coding and reviewed changes
+
+The coding loop can inspect project files and prepare complete replacement
+content with a diff. Proposing a change does not write it to disk. When the
+caller approves and applies a proposal, Shakti checks that the original file
+has not changed and backs up existing content before writing.
+
+The published backend provides the proposal and apply APIs; the review interface
+is part of the upcoming desktop milestone. The agent loop has a ten-step limit
+and cannot execute shell commands.
 
 ## Repository layout
 
+The public repository currently contains the backend milestone:
+
 ```text
-shakti/
-  __init__.py          Python package
-  core.py              Inference, storage, ingestion, retrieval, and code proposals
-tests/
-  test_core.py         Backend behavior checks
-requirements-core.txt  Document-processing dependencies
+Shakti-AI-Agent/
+├── shakti/
+│   ├── __init__.py          Package entry point
+│   └── core.py              Local AI, memory, documents, and coding workflow
+├── tests/
+│   └── test_core.py         Backend behavior and file-boundary checks
+├── .gitignore               Excludes local data, runtimes, weights, and secrets
+├── requirements-core.txt    Dependencies for document extraction
+└── README.md                Setup, architecture, status, and roadmap
 ```
 
-Local conversations, indexes, backups, downloaded runtimes, and model weights
-are excluded from Git. The repository does not include private user data or
-trained weights.
+### Inside the backend
+
+| Component in `shakti/core.py` | Responsibility |
+| --- | --- |
+| `LocalModel` | Connects to the local inference endpoint for chat, streaming, and embeddings |
+| `Store` | Persists scoped conversations, explicit memories, documents, and passage vectors in SQLite |
+| `extract()` | Reads supported document and source-file formats within import limits |
+| `ingest()` / `retrieve()` | Builds the document index and selects passages relevant to a question |
+| `Workspace` | Enforces project file boundaries, creates diffs, and applies reviewed changes with backups |
+| `answer()` | Combines retrieved context, memory, and conversation history for a response |
+| `code_agent()` | Coordinates the bounded read, propose, and finish workflow |
+
+### Local files excluded from uploads
+
+Conversations, document indexes, and file backups are stored under `data/`.
+Downloaded runtimes and model weights used by the local development setup are
+kept under `runtime/`. Both directories are excluded from Git, alongside virtual
+environments and credential-file patterns. Runtime or model files configured
+outside the project remain in their separately configured locations.
+
+The desktop interface and additional integration files are not included in this
+public milestone; their planned publication is tracked in the roadmap below.
 
 ## Current limits
 
